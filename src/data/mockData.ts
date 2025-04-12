@@ -198,7 +198,7 @@ export function getFolderPath(
 
     // Add to path
     path.unshift({ id: folder.id, name: folder.name });
-    currentId = folder.parentId || "";
+    currentId = folder.parentId ?? "";
   }
 
   // Add root

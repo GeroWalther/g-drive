@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -14,7 +15,7 @@ export function formatBytes(bytes: string | number | undefined): string {
   }
 
   const bytesNum = typeof bytes === "string" ? parseInt(bytes, 10) : bytes;
-  if (isNaN(bytesNum as number)) return "0 B";
+  if (typeof bytesNum === "number" && isNaN(bytesNum)) return "0 B";
 
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   if (bytesNum === 0) return "0 B";
@@ -22,7 +23,7 @@ export function formatBytes(bytes: string | number | undefined): string {
   const i = Math.floor(Math.log(bytesNum as number) / Math.log(1024));
   if (i === 0) return `${bytesNum} ${sizes[i]}`;
 
-  return `${(bytesNum / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  return `${((bytesNum as number) / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
 }
 
 export function formatDate(date: string | Date | undefined): string {
