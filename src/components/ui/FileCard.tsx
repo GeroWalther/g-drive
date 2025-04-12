@@ -55,9 +55,7 @@ export function FileCard({
             </DropdownMenu>
           </div>
           {type === "folder" ? (
-            <div
-              className={`flex h-40 items-center justify-center ${type === "folder" ? "bg-secondary/20" : "bg-gray-50"}`}
-            >
+            <div className="bg-secondary/20 flex h-40 items-center justify-center">
               <FolderIcon className="h-20 w-20 text-blue-500" />
             </div>
           ) : type === "doc" ? (
