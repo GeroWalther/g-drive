@@ -75,7 +75,7 @@ export function FilesContainer({ files, onFolderClick }: FilesContainerProps) {
       {view === "list" ? (
         <FileList files={files} onFolderClick={onFolderClick} />
       ) : (
-        <FilesGrid files={files} />
+        <FilesGrid files={files} onFolderClick={onFolderClick} />
       )}
 
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>

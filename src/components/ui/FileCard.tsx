@@ -32,14 +32,22 @@ export function FileCard({
   itemCount,
   onClick,
 }: FileCardProps) {
+  // Function to stop event propagation for menu clicks
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <Card
-      className="group overflow-hidden transition-all hover:shadow-md"
+      className="group cursor-pointer overflow-hidden transition-all hover:shadow-md"
       onClick={onClick}
     >
       <CardContent className="p-0">
         <div className="relative">
-          <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <div
+            className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={handleMenuClick}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm hover:bg-gray-50">
                 <DotsIcon className="h-4 w-4 text-gray-600" />
