@@ -9,9 +9,25 @@ export interface BreadcrumbItem {
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
+  onItemClick?: (href: string) => void;
 }
 
-export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
+export function Breadcrumbs({
+  items,
+  className = "",
+  onItemClick,
+}: BreadcrumbsProps) {
+  // Handle breadcrumb click
+  const handleClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (onItemClick) {
+      e.preventDefault();
+      onItemClick(href);
+    }
+  };
+
   return (
     <nav className={`flex items-center text-sm ${className}`}>
       <ol className="flex items-center space-x-1">
@@ -19,6 +35,7 @@ export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
           <Link
             href="/"
             className="text-muted-foreground hover:text-foreground flex items-center"
+            onClick={(e) => handleClick(e, "/")}
           >
             <HomeIcon className="mr-1 h-4 w-4" />
             <span className="sr-only">Home</span>
@@ -35,6 +52,7 @@ export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
               <Link
                 href={item.href}
                 className="text-muted-foreground hover:text-foreground ml-1"
+                onClick={(e) => handleClick(e, item.href)}
               >
                 {item.label}
               </Link>

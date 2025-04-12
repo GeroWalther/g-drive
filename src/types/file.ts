@@ -7,4 +7,5 @@ export interface FileProps {
   size?: string;
   lastModified?: string;
   itemCount?: number;
+  parentId?: string;
 }
