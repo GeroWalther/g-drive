@@ -1,6 +1,6 @@
-# Create T3 App
+# G-Dive
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+This is a google-drive like app built from scratch by gw-intech
 
 ## Todo
 
