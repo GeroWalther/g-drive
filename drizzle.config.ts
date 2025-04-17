@@ -1,12 +1,23 @@
 import { type Config } from "drizzle-kit";
-
-import { env } from "~/env";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 export default {
   schema: "./src/server/db/schema.ts",
-  dialect: "sqlite",
+  dialect: "singlestore",
+  tablesFilter: ["G_DRIVE_DB_9f5bc*"],
+  out: "./drizzle",
   dbCredentials: {
-    url: env.DATABASE_URL,
+    host: process.env.SINGLE_STORE_HOST ?? "",
+    port: parseInt(process.env.SINGLE_STORE_PORT ?? "3333"),
+    user: process.env.SINGLE_STORE_USER ?? "",
+    password: process.env.SINGLE_STORE_PASS ?? "",
+    database: process.env.SINGLE_STORE_DB_NAME ?? "",
+    ssl: {
+      rejectUnauthorized: true,
+      ca: readFileSync(
+        resolve(process.cwd(), "singlestore_bundle.pem"),
+      ).toString(),
+    },
   },
-  tablesFilter: ["g-drive_*"],
 } satisfies Config;
