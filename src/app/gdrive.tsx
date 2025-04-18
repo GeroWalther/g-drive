@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppLayout } from "~/components/layout/AppLayout";
 import { Breadcrumbs } from "~/components/ui/Breadcrumbs";
 import { FilesContainer } from "~/components/FilesContainer";
 import { type FileProps } from "~/types/file";
@@ -73,7 +72,7 @@ export default function GDrive({
     // If clicking on the root, go to home page
     if (id === "root") {
       if (typeof window !== "undefined") {
-        window.location.href = "/";
+        window.location.href = "/drive";
       }
       return;
     }
