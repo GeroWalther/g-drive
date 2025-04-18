@@ -19,7 +19,7 @@ export function Breadcrumbs({
   className = "",
   onItemClick,
 }: BreadcrumbsProps) {
-  // Handle breadcrumb click
+  // Handle breadcrumb click if needed
   const handleClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string,

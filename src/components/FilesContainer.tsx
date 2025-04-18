@@ -22,9 +22,14 @@ import {
 interface FilesContainerProps {
   files: FileProps[];
   onFolderClick?: (file: FileProps) => void;
+  getFolderUrl?: (file: FileProps) => string;
 }
 
-export function FilesContainer({ files, onFolderClick }: FilesContainerProps) {
+export function FilesContainer({
+  files,
+  onFolderClick,
+  getFolderUrl,
+}: FilesContainerProps) {
   const [view, setView] = useState<"grid" | "list">("list");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -73,9 +78,17 @@ export function FilesContainer({ files, onFolderClick }: FilesContainerProps) {
       </div>
 
       {view === "list" ? (
-        <FileList files={files} onFolderClick={onFolderClick} />
+        <FileList
+          files={files}
+          onFolderClick={onFolderClick}
+          getFolderUrl={getFolderUrl}
+        />
       ) : (
-        <FilesGrid files={files} onFolderClick={onFolderClick} />
+        <FilesGrid
+          files={files}
+          onFolderClick={onFolderClick}
+          getFolderUrl={getFolderUrl}
+        />
       )}
 
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FileProps } from "~/types/file";
 import {
   DocumentIcon,
@@ -19,12 +20,21 @@ import {
 interface FileListProps {
   files: FileProps[];
   onFolderClick?: (file: FileProps) => void;
+  getFolderUrl?: (file: FileProps) => string;
 }
 
-export function FileList({ files, onFolderClick }: FileListProps) {
-  const handleFolderClick = (file: FileProps) => {
+export function FileList({
+  files,
+  onFolderClick,
+  getFolderUrl,
+}: FileListProps) {
+  const handleFolderClick = (file: FileProps, e: React.MouseEvent) => {
     if (file.type === "folder" && onFolderClick) {
-      onFolderClick(file);
+      // If getFolderUrl is provided, let the Link component handle navigation
+      // This prevents duplicate navigation
+      if (!getFolderUrl) {
+        onFolderClick(file);
+      }
     }
   };
 
@@ -66,11 +76,19 @@ export function FileList({ files, onFolderClick }: FileListProps) {
             <tr
               key={file.id}
               className={`hover:bg-secondary/30 border-border border-t ${file.type === "folder" ? "cursor-pointer" : ""}`}
-              onClick={() => file.type === "folder" && handleFolderClick(file)}
+              onClick={(e) =>
+                file.type === "folder" && handleFolderClick(file, e)
+              }
             >
               <td className="flex items-center gap-3 px-4 py-3">
                 {renderIcon(file.type)}
-                <span className="font-medium">{file.name}</span>
+                {file.type === "folder" && getFolderUrl ? (
+                  <Link href={getFolderUrl(file)} className="font-medium">
+                    {file.name}
+                  </Link>
+                ) : (
+                  <span className="font-medium">{file.name}</span>
+                )}
               </td>
               <td className="text-muted-foreground hidden px-4 py-3 md:table-cell">
                 {file.lastModified ?? "—"}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Breadcrumbs } from "~/components/ui/Breadcrumbs";
 import { FilesContainer } from "~/components/FilesContainer";
 import { type FileProps } from "~/types/file";
@@ -17,32 +16,6 @@ export default function GDrive({
   currentFolder,
   allItems = [],
 }: GDriveProps) {
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(
-    currentFolder?.id ?? null,
-  );
-  const [folderStructure, setFolderStructure] = useState<
-    Record<string, FileProps[]>
-  >({});
-
-  // Organize documents into folder structure on component mount
-  useEffect(() => {
-    const structure: Record<string, FileProps[]> = {};
-
-    // Group files by parent ID
-    documents.forEach((doc) => {
-      const parentId = doc.parentId ?? "root";
-      structure[parentId] ??= [];
-      structure[parentId].push(doc);
-    });
-
-    setFolderStructure(structure);
-  }, [documents]);
-
-  // Get current folder contents
-  const currentFolderContents = currentFolderId
-    ? (folderStructure[currentFolderId] ?? [])
-    : (folderStructure.root ?? []);
-
   // Use all items if provided, otherwise use documents + current folder
   const itemsForBreadcrumbs =
     allItems.length > 0
@@ -50,62 +23,43 @@ export default function GDrive({
       : [...documents, ...(currentFolder ? [currentFolder] : [])];
 
   // Generate breadcrumb path for current folder
-  const breadcrumbPath = buildFolderPath(itemsForBreadcrumbs, currentFolderId);
+  const breadcrumbPath = buildFolderPath(
+    itemsForBreadcrumbs,
+    currentFolder?.id ?? null,
+  );
 
-  // Handle folder click
-  const handleFolderClick = (file: FileProps) => {
+  // Generate URLs for folders
+  const getFolderUrl = (file: FileProps): string => {
     if (file.type === "folder") {
-      // If in client-side navigation mode
-      setCurrentFolderId(file.id);
-
-      // For folder navigation to separate pages
-      if (typeof window !== "undefined") {
-        window.location.href = `/drive/${file.id}`;
-      }
+      return `/drive/${file.id}`;
     }
+    // For non-folders, you might want to implement file preview
+    return "#";
   };
 
-  // Handle breadcrumb click
-  const handleBreadcrumbClick = (href: string) => {
-    const id = href.startsWith("#") ? href.substring(1) : "root";
-
-    // If clicking on the root, go to home page
-    if (id === "root") {
-      if (typeof window !== "undefined") {
-        window.location.href = "/drive";
-      }
-      return;
-    }
-
-    // Navigate to folder
-    if (typeof window !== "undefined") {
-      window.location.href = `/drive/${id}`;
-    }
-  };
-
-  // Create breadcrumb items
+  // Create breadcrumb items with proper hrefs
   const breadcrumbItems = breadcrumbPath.map((folder) => ({
     label: folder.name,
-    href: `#${folder.id}`,
+    href: folder.id === "root" ? "/drive" : `/drive/${folder.id}`,
   }));
 
   return (
     <div className="space-y-8">
-      <Breadcrumbs
-        items={breadcrumbItems}
-        className="mb-6"
-        onItemClick={handleBreadcrumbClick}
-      />
+      <Breadcrumbs items={breadcrumbItems} className="mb-6" />
 
       <section>
         <h1 className="mb-6 text-2xl font-bold">
-          {currentFolder?.name ??
-            (currentFolderId === null
-              ? "My Drive"
-              : (breadcrumbPath[breadcrumbPath.length - 1]?.name ??
-                "My Drive"))}
+          {currentFolder?.name ?? "My Drive"}
         </h1>
-        <FilesContainer files={documents} onFolderClick={handleFolderClick} />
+        <FilesContainer
+          files={documents}
+          getFolderUrl={getFolderUrl}
+          onFolderClick={(file) => {
+            // This is now mainly used for analytics or other side effects,
+            // since navigation is handled by Link components
+            console.log("Folder clicked:", file.name);
+          }}
+        />
       </section>
     </div>
   );
