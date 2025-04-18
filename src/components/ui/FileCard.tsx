@@ -22,6 +22,7 @@ interface FileCardProps {
   lastModified?: string;
   itemCount?: number;
   onClick?: () => void;
+  url?: string;
 }
 
 export function FileCard({
@@ -31,6 +32,7 @@ export function FileCard({
   lastModified,
   itemCount,
   onClick,
+  url,
 }: FileCardProps) {
   // Function to stop event propagation for menu clicks
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -81,7 +83,11 @@ export function FileCard({
           ) : type === "image" ? (
             <div
               className="h-40 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: "url(/placeholder-image.jpg)" }}
+              style={{
+                backgroundImage: url
+                  ? `url(${url})`
+                  : "url(/placeholder-image.jpg)",
+              }}
             />
           ) : (
             <div className="flex h-40 items-center justify-center bg-gray-50">

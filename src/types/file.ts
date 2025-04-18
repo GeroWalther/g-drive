@@ -8,4 +8,5 @@ export interface FileProps {
   lastModified?: string;
   itemCount?: number;
   parentId?: string;
+  url?: string; // URL to access the file
 }

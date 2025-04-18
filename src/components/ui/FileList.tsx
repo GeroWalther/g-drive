@@ -20,21 +20,27 @@ import {
 interface FileListProps {
   files: FileProps[];
   onFolderClick?: (file: FileProps) => void;
+  onFileClick?: (file: FileProps) => void;
   getFolderUrl?: (file: FileProps) => string;
+  getLinkUrl?: (file: FileProps) => string | undefined;
 }
 
 export function FileList({
   files,
   onFolderClick,
+  onFileClick,
   getFolderUrl,
+  getLinkUrl,
 }: FileListProps) {
-  const handleFolderClick = (file: FileProps, e: React.MouseEvent) => {
+  const handleClick = (file: FileProps, e: React.MouseEvent) => {
     if (file.type === "folder" && onFolderClick) {
       // If getFolderUrl is provided, let the Link component handle navigation
       // This prevents duplicate navigation
       if (!getFolderUrl) {
         onFolderClick(file);
       }
+    } else if (file.type !== "folder" && onFileClick) {
+      onFileClick(file);
     }
   };
 
@@ -75,14 +81,16 @@ export function FileList({
           {files.map((file) => (
             <tr
               key={file.id}
-              className={`hover:bg-secondary/30 border-border border-t ${file.type === "folder" ? "cursor-pointer" : ""}`}
-              onClick={(e) =>
-                file.type === "folder" && handleFolderClick(file, e)
-              }
+              className={`hover:bg-secondary/30 border-border border-t ${file.type === "folder" || onFileClick ? "cursor-pointer" : ""}`}
+              onClick={(e) => handleClick(file, e)}
             >
               <td className="flex items-center gap-3 px-4 py-3">
                 {renderIcon(file.type)}
-                {file.type === "folder" && getFolderUrl ? (
+                {getLinkUrl?.(file) ? (
+                  <Link href={getLinkUrl(file) ?? "#"} className="font-medium">
+                    {file.name}
+                  </Link>
+                ) : file.type === "folder" && getFolderUrl ? (
                   <Link href={getFolderUrl(file)} className="font-medium">
                     {file.name}
                   </Link>

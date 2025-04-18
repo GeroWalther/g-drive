@@ -44,6 +44,7 @@ export function dbItemsToFileProps(
     size: item.size ? `${item.size} KB` : undefined,
     parentId: item.parent_id ? String(item.parent_id) : undefined,
     itemCount: item.item_count ?? undefined,
+    url: item.url ?? undefined,
   }));
 }
 
@@ -143,4 +144,34 @@ export function buildFolderPath(
   path.unshift({ id: "root", name: "My Drive" });
 
   return path;
+}
+
+/**
+ * Extracts the folder ID from a URL path for the G-Drive application
+ * @param path The URL path from which to extract the folder ID
+ * @returns The folder ID or null if not found
+ */
+export function extractFolderIdFromPath(path: string): string | null {
+  const parts = path.split("/").filter(Boolean);
+
+  // Not a drive path
+  if (parts.length === 0 || parts[0] !== "drive") {
+    return null;
+  }
+
+  // Root drive path
+  if (parts.length === 1) {
+    return null;
+  }
+
+  // For paths like /drive/{folderId}
+  if (parts.length === 2) {
+    return parts[1] ?? null;
+  }
+
+  // For paths like /drive/{parentId}/{folderName}
+  // We need to handle this differently in the FilesContainer component
+  // which has access to the folder list to look up by name
+  // Here we just return the parent ID
+  return parts[1] ?? null;
 }
