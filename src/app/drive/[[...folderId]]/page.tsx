@@ -3,11 +3,10 @@ import { AppLayout } from "~/components/layout/AppLayout";
 import { notFound } from "next/navigation";
 import { QUERIES } from "~/server/db/queries";
 
-export default async function GDrivePage({
-  params,
-}: {
-  params: { folderId?: string[] };
+export default async function GDrivePage(props: {
+  params: Promise<{ folderId?: string[] }>;
 }) {
+  const params = await props.params;
   // Determine if we're at root or in a folder
   const isRoot = !params.folderId || params.folderId.length === 0;
 
