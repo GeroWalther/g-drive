@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { FileList } from "~/components/ui/FileList";
 import { FilesGrid } from "~/components/ui/FilesGrid";
@@ -25,14 +25,37 @@ interface FilesContainerProps {
   getFolderUrl?: (file: FileProps) => string;
 }
 
+// Function to safely access localStorage (avoids SSR issues)
+const getStoredViewMode = (): "grid" | "list" => {
+  if (typeof window !== "undefined") {
+    const storedMode = localStorage.getItem("gdrive-view-mode");
+    return storedMode === "grid" ? "grid" : "list";
+  }
+  return "list"; // Default for SSR
+};
+
 export function FilesContainer({
   files,
   onFolderClick,
   getFolderUrl,
 }: FilesContainerProps) {
+  // Initialize with a default value, will be updated in useEffect
   const [view, setView] = useState<"grid" | "list">("list");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  // Load the view mode from localStorage on component mount
+  useEffect(() => {
+    setView(getStoredViewMode());
+  }, []);
+
+  // Update view mode in state and localStorage when changed
+  const handleViewChange = (newView: "grid" | "list") => {
+    setView(newView);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("gdrive-view-mode", newView);
+    }
+  };
 
   const handleUpload = () => {
     setIsUploading(true);
@@ -48,7 +71,7 @@ export function FilesContainer({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ViewSwitcher view={view} onChange={setView} />
+          <ViewSwitcher view={view} onChange={handleViewChange} />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
