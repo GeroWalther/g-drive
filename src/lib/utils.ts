@@ -2,6 +2,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { type FileProps, type FileType } from "~/types/file";
+import type { fileItems } from "~/server/db/schema";
+import type { InferSelectModel } from "drizzle-orm";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,6 +27,24 @@ export function mapDbTypeToFileType(dbType: string): FileType {
   };
 
   return typeMap[dbType.toLowerCase()] ?? "other";
+}
+
+/**
+ * Transforms database file items to FileProps format for UI components
+ * @param dbItems Array of database file items
+ * @returns Array of FileProps objects
+ */
+export function dbItemsToFileProps(
+  dbItems: InferSelectModel<typeof fileItems>[],
+): FileProps[] {
+  return dbItems.map((item) => ({
+    id: String(item.id),
+    name: item.name,
+    type: mapDbTypeToFileType(item.type),
+    size: item.size ? `${item.size} KB` : undefined,
+    parentId: item.parent_id ? String(item.parent_id) : undefined,
+    itemCount: item.item_count ?? undefined,
+  }));
 }
 
 export function formatBytes(bytes: string | number | undefined): string {
@@ -83,8 +103,18 @@ export function buildFolderPath(
     return [{ id: "root", name: "My Drive" }];
   }
 
+  // For the current folder view, we need to fetch ancestors
+  // First, get the current folder by ID
+  const currentFolder = allItems.find((item) => item.id === folderId);
+  if (!currentFolder) {
+    return [{ id: "root", name: "My Drive" }];
+  }
+
   const path: { id: string; name: string }[] = [];
-  let currentId = folderId;
+  path.push({ id: currentFolder.id, name: currentFolder.name });
+
+  // Add parent folders by following parentId references
+  let parentId = currentFolder.parentId;
 
   // Prevent infinite loops
   const maxDepth = 20;
@@ -96,12 +126,16 @@ export function buildFolderPath(
     itemsById.set(item.id, item);
   });
 
-  while (currentId && currentId !== "root" && depth < maxDepth) {
-    const item = itemsById.get(currentId);
-    if (!item) break;
+  // Walk up the tree until we reach root or max depth
+  while (parentId && depth < maxDepth) {
+    const parent = itemsById.get(parentId);
+    if (!parent) break;
 
-    path.unshift({ id: item.id, name: item.name });
-    currentId = item.parentId ?? "root";
+    // Add this parent to the beginning of the path
+    path.unshift({ id: parent.id, name: parent.name });
+
+    // Move up to the next parent
+    parentId = parent.parentId;
     depth++;
   }
 

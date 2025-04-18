@@ -9,10 +9,18 @@ import { buildFolderPath } from "~/lib/utils";
 
 interface GDriveProps {
   documents: FileProps[];
+  currentFolder?: FileProps;
+  allItems?: FileProps[]; // All items for breadcrumb path generation
 }
 
-export default function GDrive({ documents }: GDriveProps) {
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+export default function GDrive({
+  documents,
+  currentFolder,
+  allItems = [],
+}: GDriveProps) {
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(
+    currentFolder?.id ?? null,
+  );
   const [folderStructure, setFolderStructure] = useState<
     Record<string, FileProps[]>
   >({});
@@ -36,13 +44,25 @@ export default function GDrive({ documents }: GDriveProps) {
     ? (folderStructure[currentFolderId] ?? [])
     : (folderStructure.root ?? []);
 
+  // Use all items if provided, otherwise use documents + current folder
+  const itemsForBreadcrumbs =
+    allItems.length > 0
+      ? allItems
+      : [...documents, ...(currentFolder ? [currentFolder] : [])];
+
   // Generate breadcrumb path for current folder
-  const breadcrumbPath = buildFolderPath(documents, currentFolderId);
+  const breadcrumbPath = buildFolderPath(itemsForBreadcrumbs, currentFolderId);
 
   // Handle folder click
   const handleFolderClick = (file: FileProps) => {
     if (file.type === "folder") {
+      // If in client-side navigation mode
       setCurrentFolderId(file.id);
+
+      // For folder navigation to separate pages
+      if (typeof window !== "undefined") {
+        window.location.href = `/drive/${file.id}`;
+      }
     }
   };
 
@@ -50,14 +70,18 @@ export default function GDrive({ documents }: GDriveProps) {
   const handleBreadcrumbClick = (href: string) => {
     const id = href.startsWith("#") ? href.substring(1) : "root";
 
-    // If clicking on the root, set current folder to null
+    // If clicking on the root, go to home page
     if (id === "root") {
-      setCurrentFolderId(null);
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
       return;
     }
 
-    // Set current folder to the clicked breadcrumb
-    setCurrentFolderId(id);
+    // Navigate to folder
+    if (typeof window !== "undefined") {
+      window.location.href = `/drive/${id}`;
+    }
   };
 
   // Create breadcrumb items
@@ -76,14 +100,13 @@ export default function GDrive({ documents }: GDriveProps) {
 
       <section>
         <h1 className="mb-6 text-2xl font-bold">
-          {currentFolderId === null
-            ? "My Drive"
-            : breadcrumbPath[breadcrumbPath.length - 1]?.name}
+          {currentFolder?.name ??
+            (currentFolderId === null
+              ? "My Drive"
+              : (breadcrumbPath[breadcrumbPath.length - 1]?.name ??
+                "My Drive"))}
         </h1>
-        <FilesContainer
-          files={currentFolderContents}
-          onFolderClick={handleFolderClick}
-        />
+        <FilesContainer files={documents} onFolderClick={handleFolderClick} />
       </section>
     </div>
   );

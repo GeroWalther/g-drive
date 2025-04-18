@@ -2,26 +2,29 @@ import { db } from "~/server/db";
 import GDrive from "./gdrive";
 import { AppLayout } from "~/components/layout/AppLayout";
 import { fileItems } from "~/server/db/schema";
-import { type FileProps } from "~/types/file";
-import { mapDbTypeToFileType } from "~/lib/utils";
+import { dbItemsToFileProps } from "~/lib/utils";
+import { isNull, eq } from "drizzle-orm";
 
-export default async function HomePage() {
-  // Fetch data from the database
-  const dbItems = await db.select().from(fileItems);
+export default async function GDriveRoot() {
+  // Fetch root level items (those with null parent_id)
+  const rootItems = await db
+    .select()
+    .from(fileItems)
+    .where(isNull(fileItems.parent_id));
+
+  // Also fetch all folders for breadcrumb navigation
+  const allFolders = await db
+    .select()
+    .from(fileItems)
+    .where(eq(fileItems.type, "folder"));
 
   // Transform database items to FileProps format
-  const documents: FileProps[] = dbItems.map((item) => ({
-    id: String(item.id),
-    name: item.name,
-    type: mapDbTypeToFileType(item.type),
-    size: item.size ? `${item.size} KB` : undefined,
-    parentId: item.parent_id ? String(item.parent_id) : undefined,
-    itemCount: item.item_count ?? undefined,
-  }));
+  const documents = dbItemsToFileProps(rootItems);
+  const allItems = dbItemsToFileProps([...rootItems, ...allFolders]);
 
   return (
     <AppLayout>
-      <GDrive documents={documents} />
+      <GDrive documents={documents} allItems={allItems} />
     </AppLayout>
   );
 }
