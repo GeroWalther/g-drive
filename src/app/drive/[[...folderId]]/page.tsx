@@ -1,10 +1,7 @@
-import { db } from "~/server/db";
 import GDrive from "~/app/gdrive";
 import { AppLayout } from "~/components/layout/AppLayout";
-import { fileItems } from "~/server/db/schema";
-import { dbItemsToFileProps } from "~/lib/utils";
-import { eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { QUERIES } from "~/server/db/queries";
 
 export default async function GDrivePage({
   params,
@@ -13,76 +10,65 @@ export default async function GDrivePage({
 }) {
   // Determine if we're at root or in a folder
   const isRoot = !params.folderId || params.folderId.length === 0;
-  const folderId = isRoot ? null : params.folderId![0];
 
-  let folderContents;
-  let currentFolder = undefined;
+  let documents;
+  let currentFolder;
+  let breadcrumbPath;
 
-  if (isRoot) {
-    // Fetch root level items (those with null parent_id)
-    folderContents = await db
-      .select()
-      .from(fileItems)
-      .where(isNull(fileItems.parent_id));
-  } else {
-    // Convert the folderId to BigInt for database query
-    let folderBigInt: bigint;
-    try {
-      folderBigInt = BigInt(folderId!);
-    } catch (e) {
-      console.error("Invalid folder ID:", folderId);
-      return notFound();
+  try {
+    if (isRoot) {
+      // Fetch root level items
+      documents = await QUERIES.getRootItems();
+      breadcrumbPath = [
+        { id: "root", name: "My Drive", type: "folder" as const },
+      ];
+    } else {
+      const folderId = params.folderId?.[0];
+
+      // Safety check - this shouldn't happen given our isRoot check above
+      if (!folderId) {
+        return notFound();
+      }
+
+      // Convert the folderId to BigInt for database query
+      let folderBigInt: bigint;
+      try {
+        folderBigInt = BigInt(folderId);
+      } catch (e) {
+        console.error("Invalid folder ID:", folderId);
+        return notFound();
+      }
+
+      // Check if folder exists
+      currentFolder = await QUERIES.getFolderById(folderBigInt);
+      if (!currentFolder) {
+        console.error("Folder not found:", folderId);
+        return notFound();
+      }
+
+      // Get folder contents and breadcrumb path
+      documents = await QUERIES.getFolderContents(folderBigInt);
+      breadcrumbPath = await QUERIES.getBreadcrumbPath(folderBigInt);
     }
 
-    // First, check if the folder exists and it's actually a folder
-    const folderCheck = await db
-      .select()
-      .from(fileItems)
-      .where(eq(fileItems.id, folderBigInt))
-      .limit(1);
-
-    if (folderCheck.length === 0 || folderCheck[0]?.type !== "folder") {
-      console.error("Folder not found or not a folder type:", folderId);
-      return notFound();
-    }
-
-    // Get the folder item
-    const folderItem = folderCheck[0];
-
-    // Fetch the folder contents - only items with this folder as parent
-    folderContents = await db
-      .select()
-      .from(fileItems)
-      .where(eq(fileItems.parent_id, folderBigInt));
-
-    // Set current folder
-    currentFolder = folderItem;
+    return (
+      <AppLayout>
+        <GDrive
+          documents={documents}
+          currentFolder={currentFolder}
+          allItems={breadcrumbPath}
+        />
+      </AppLayout>
+    );
+  } catch (error) {
+    console.error("Error loading drive data:", error);
+    return (
+      <AppLayout>
+        <div className="p-8 text-center">
+          <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
+          <p>We couldn&apos;t load your files. Please try again later.</p>
+        </div>
+      </AppLayout>
+    );
   }
-
-  // Fetch all folders for breadcrumb navigation
-  const allFolders = await db
-    .select()
-    .from(fileItems)
-    .where(eq(fileItems.type, "folder"));
-
-  // Transform database items to FileProps format
-  const documents = dbItemsToFileProps(folderContents);
-  const allItems = dbItemsToFileProps([
-    ...folderContents,
-    ...allFolders,
-    ...(currentFolder ? [currentFolder] : []),
-  ]);
-  const currentFolderProps = currentFolder
-    ? dbItemsToFileProps([currentFolder])[0]
-    : undefined;
-
-  return (
-    <AppLayout>
-      <GDrive
-        documents={documents}
-        currentFolder={currentFolderProps}
-        allItems={allItems}
-      />
-    </AppLayout>
-  );
 }
