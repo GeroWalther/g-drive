@@ -2,14 +2,9 @@ import "server-only";
 
 import { db } from "~/server/db";
 import { fileItems } from "~/server/db/schema";
-import { eq, isNull, and, ne, sql } from "drizzle-orm";
+import { eq, isNull, and, sql } from "drizzle-orm";
 import { type FileProps, type FileType } from "~/types/file";
 import { dbItemsToFileProps } from "~/lib/utils";
-
-// Type for insert result with insertId
-interface InsertResult {
-  insertId?: string | number;
-}
 
 export const QUERIES = {
   /**
