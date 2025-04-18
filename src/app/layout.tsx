@@ -2,7 +2,7 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
-
+import { ClerkProvider } from "@clerk/nextjs";
 export const metadata: Metadata = {
   title: "G-Drive",
   description: "Your files, accessible anywhere",
@@ -18,8 +18,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} dark`}>
-      <body className="bg-background font-sans antialiased">{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${geist.variable} dark`}>
+        <body className="bg-background font-sans antialiased">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

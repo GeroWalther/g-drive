@@ -2,6 +2,7 @@ import GDrive from "~/app/gdrive";
 import { AppLayout } from "~/components/layout/AppLayout";
 import { notFound } from "next/navigation";
 import { QUERIES } from "~/server/db/queries";
+import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default async function GDrivePage(props: {
   params: Promise<{ folderId?: string[] }>;
