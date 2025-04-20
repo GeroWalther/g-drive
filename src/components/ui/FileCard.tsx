@@ -43,7 +43,7 @@ export function FileCard({
   const defaultFileActions = useFileActions();
 
   // Use provided fileActions or the default one
-  const { openRenameDialog, openDeleteDialog } =
+  const { openRenameDialog, openDeleteDialog, handleDownload } =
     fileActions ?? defaultFileActions;
 
   // Create a file object to pass to actions
@@ -78,7 +78,11 @@ export function FileCard({
                 <DotsIcon className="h-4 w-4 text-gray-600" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Download</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => file.id && handleDownload(file)}
+                >
+                  Download
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => file.id && openRenameDialog(file)}
                 >

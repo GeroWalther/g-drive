@@ -139,7 +139,11 @@ export function FileList({
                       onClick={(e) => e.stopPropagation()}
                     >
                       {file.type !== "folder" && (
-                        <DropdownMenuItem>Download</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => fileActions.handleDownload(file)}
+                        >
+                          Download
+                        </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => openRenameDialog(file)}>
                         Rename

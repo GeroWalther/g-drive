@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 "use client";
 
 import { useState } from "react";
@@ -38,18 +42,14 @@ export function useFileActions() {
       });
 
       if (!response.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const errorData = await response.json();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         throw new Error(errorData.error ?? "Failed to rename item");
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       toast.success("Item renamed successfully");
       router.refresh();
       return true;
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       toast.error(
         error instanceof Error ? error.message : "Failed to rename item",
       );
@@ -64,21 +64,45 @@ export function useFileActions() {
       });
 
       if (!response.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const errorData = await response.json();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         throw new Error(errorData.error ?? "Failed to delete item");
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       toast.success("Item deleted successfully");
       router.refresh();
       return true;
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       toast.error(
         error instanceof Error ? error.message : "Failed to delete item",
       );
       return false;
+    }
+  };
+
+  const handleDownload = (file: FileProps) => {
+    // Only attempt to download if the file has a URL and is not a folder
+    if (file.url && file.type !== "folder") {
+      try {
+        // Create a hidden anchor element
+        const link = document.createElement("a");
+        link.href = file.url;
+        link.download = file.name; // Set the filename to download as
+        link.target = "_blank"; // Open in new tab (not strictly necessary for download)
+
+        // Append to body, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success(`Downloading ${file.name}`);
+      } catch (error) {
+        toast.error("Failed to download file");
+        console.error("Download error:", error);
+      }
+    } else if (file.type === "folder") {
+      toast.error("Folders cannot be downloaded directly");
+    } else {
+      toast.error("No download URL available for this file");
     }
   };
 
@@ -104,6 +128,7 @@ export function useFileActions() {
     selectedFile,
     handleRename,
     handleDelete,
+    handleDownload,
     openRenameDialog,
     openDeleteDialog,
     closeDialogs,
@@ -118,6 +143,7 @@ export function FileActions({ file, fileActions }: FileActionsProps) {
     selectedFile,
     handleRename,
     handleDelete,
+    handleDownload,
     openRenameDialog,
     openDeleteDialog,
     closeDialogs,
