@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { FileActions, useFileActions } from "./FileActions";
+import { FileActions, useFileActions, directShare } from "./FileActions";
 
 interface FileListProps {
   files: FileProps[];
@@ -148,7 +148,9 @@ export function FileList({
                       <DropdownMenuItem onClick={() => openRenameDialog(file)}>
                         Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Share</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => directShare(file)}>
+                        Share
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => openDeleteDialog(file)}

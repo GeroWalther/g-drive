@@ -177,6 +177,117 @@ export const QUERIES = {
 
     return dbItemsToFileProps(items);
   },
+
+  /**
+   * Create a share link for a file or folder
+   */
+  createShareLink: async function (
+    fileId: string,
+    userId: string,
+  ): Promise<string | null> {
+    try {
+      // Convert ID to BigInt
+      const itemId = BigInt(fileId);
+
+      // Check if the item exists and belongs to the user
+      const item = await db
+        .select()
+        .from(fileItems)
+        .where(and(eq(fileItems.id, itemId), eq(fileItems.user_id, userId)))
+        .limit(1);
+
+      if (!item.length) return null;
+
+      // Generate a unique share ID if one doesn't exist
+      let shareId = item[0]?.share_id;
+
+      if (!shareId) {
+        // Create a unique ID for sharing
+        shareId = `share_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+
+        // Update the item with the share ID and mark it as public
+        await db
+          .update(fileItems)
+          .set({
+            share_id: shareId,
+            is_public: 1,
+          })
+          .where(eq(fileItems.id, itemId));
+      } else {
+        // If already shared, just ensure it's public
+        if (item[0]?.is_public !== 1) {
+          await db
+            .update(fileItems)
+            .set({ is_public: 1 })
+            .where(eq(fileItems.id, itemId));
+        }
+      }
+
+      return shareId;
+    } catch (error) {
+      console.error("Error creating share link:", error);
+      return null;
+    }
+  },
+
+  /**
+   * Get item by share ID (accessible without authentication)
+   */
+  getItemByShareId: async function (
+    shareId: string,
+  ): Promise<FileProps | null> {
+    try {
+      const item = await db
+        .select()
+        .from(fileItems)
+        .where(and(eq(fileItems.share_id, shareId), eq(fileItems.is_public, 1)))
+        .limit(1);
+
+      if (item.length === 0 || !item[0]) return null;
+
+      const itemProps = dbItemsToFileProps([item[0]]);
+      return itemProps[0] ?? null;
+    } catch (error) {
+      console.error("Error getting shared item:", error);
+      return null;
+    }
+  },
+
+  /**
+   * Get folder contents for a shared folder (accessible without authentication)
+   */
+  getSharedFolderContents: async function (
+    folderId: bigint,
+  ): Promise<FileProps[]> {
+    try {
+      // First get the folder to make sure it's public
+      const folder = await db
+        .select()
+        .from(fileItems)
+        .where(
+          and(
+            eq(fileItems.id, folderId),
+            eq(fileItems.type, "folder"),
+            eq(fileItems.is_public, 1),
+          ),
+        )
+        .limit(1);
+
+      if (folder.length === 0) return [];
+
+      // Get folder contents
+      const folderContents = await db
+        .select()
+        .from(fileItems)
+        .where(eq(fileItems.parent_id, folderId))
+        .orderBy(fileItems.name);
+
+      return dbItemsToFileProps(folderContents);
+    } catch (error) {
+      console.error("Error getting shared folder contents:", error);
+      return [];
+    }
+  },
 };
 
 export const MUTATIONS = {

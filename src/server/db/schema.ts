@@ -23,6 +23,8 @@ export const fileItems = singlestoreTable("file_items", {
   parent_id: bigint("parent_id", { mode: "bigint" }), // null for root items
   item_count: int("item_count"), // for folder stats
   user_id: text("user_id").notNull(), // clerk user id for ownership
+  share_id: text("share_id"), // unique identifier for sharing
+  is_public: int("is_public").default(0), // 0 = private, 1 = public via share link
   created_at: timestamp("created_at").defaultNow(),
   modified_at: timestamp("modified_at").defaultNow(),
 });

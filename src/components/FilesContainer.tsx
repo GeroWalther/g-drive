@@ -23,6 +23,7 @@ interface FilesContainerProps {
   onFileClick?: (file: FileProps) => void;
   getFolderUrl?: (file: FileProps) => string;
   getLinkUrl?: (file: FileProps) => string | undefined;
+  readOnly?: boolean; // Added to support shared view (no upload/create buttons)
 }
 
 export function FilesContainer({
@@ -31,6 +32,7 @@ export function FilesContainer({
   onFileClick,
   getFolderUrl,
   getLinkUrl,
+  readOnly,
 }: FilesContainerProps) {
   // Initialize with a default value, will be updated in useEffect
   const [view, setView] = useState<"grid" | "list">("list");
@@ -111,10 +113,12 @@ export function FilesContainer({
           <ViewSwitcher view={view} onChange={handleViewChange} />
         </div>
 
-        <div className="flex items-center gap-2">
-          <NewFolderButton folderId={getCurrentFolderId()} />
-          <UploadButton folderId={getCurrentFolderId()} />
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <NewFolderButton folderId={getCurrentFolderId()} />
+            <UploadButton folderId={getCurrentFolderId()} />
+          </div>
+        )}
       </div>
 
       {view === "list" ? (

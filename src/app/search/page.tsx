@@ -7,12 +7,13 @@ import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import type { FileProps } from "~/types/file";
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
+export default async function SearchPage(props: {
+  searchParams: Promise<{ q?: string }> | { q?: string };
 }) {
+  // Await searchParams before using its properties
+  const searchParams = await props.searchParams;
   const query = searchParams.q;
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { userId } = await auth();
 
