@@ -5,7 +5,7 @@ import {
   SignInButton,
   SignedOut,
 } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   // redirect("/drive");
@@ -58,12 +58,12 @@ export default function Home() {
         <SignedIn>
           <div className="flex flex-col items-center gap-4">
             <p className="text-xl">Welcome back!</p>
-            <a
+            <Link
               href="/drive"
               className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
             >
               Go to My Drive
-            </a>
+            </Link>
             <div className="mt-2">
               <UserButton afterSignOutUrl="/" />
             </div>

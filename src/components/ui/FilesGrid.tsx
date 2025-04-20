@@ -1,6 +1,9 @@
-import { FileCard } from "./FileCard";
-import { type FileProps } from "~/types/file";
+"use client";
+
 import Link from "next/link";
+import { type FileProps } from "~/types/file";
+import { FileCard } from "./FileCard";
+import { FileActions, useFileActions } from "./FileActions";
 
 interface FilesGridProps {
   files: FileProps[];
@@ -17,6 +20,9 @@ export function FilesGrid({
   getFolderUrl,
   getLinkUrl,
 }: FilesGridProps) {
+  // Use a single shared instance of fileActions
+  const fileActions = useFileActions();
+
   const handleClick = (file: FileProps) => {
     if (file.type === "folder" && onFolderClick) {
       // If getFolderUrl is provided, let the Link component handle navigation
@@ -29,51 +35,69 @@ export function FilesGrid({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {files.map((file) => {
-        const url = getLinkUrl
-          ? getLinkUrl(file)
-          : file.type === "folder" && getFolderUrl
-            ? getFolderUrl(file)
-            : undefined;
-
-        return (
-          <div key={file.id}>
-            {url ? (
-              <Link href={url} className="block">
-                <FileCard
-                  name={file.name}
-                  type={file.type}
-                  size={file.size}
-                  lastModified={file.lastModified}
-                  itemCount={
-                    file.type === "folder" ? (file.itemCount ?? 0) : undefined
-                  }
-                  onClick={() => handleClick(file)}
-                  url={file.url}
-                />
-              </Link>
-            ) : (
-              <FileCard
-                name={file.name}
-                type={file.type}
-                size={file.size}
-                lastModified={file.lastModified}
-                itemCount={
-                  file.type === "folder" ? (file.itemCount ?? 0) : undefined
-                }
-                onClick={() => handleClick(file)}
-                url={file.url}
-              />
-            )}
-          </div>
-        );
-      })}
-      {files.length === 0 && (
-        <div className="text-muted-foreground col-span-full py-12 text-center">
-          No files found
-        </div>
+    <>
+      {/* Render the FileActions component once, outside the file loop */}
+      {fileActions.selectedFile && (
+        <FileActions
+          file={fileActions.selectedFile}
+          fileActions={fileActions}
+        />
       )}
-    </div>
+
+      <div>
+        {files.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {files.map((file) => (
+              <div key={file.id}>
+                {getLinkUrl?.(file) ? (
+                  <Link href={getLinkUrl(file) ?? "#"}>
+                    <FileCard
+                      id={file.id}
+                      name={file.name}
+                      type={file.type}
+                      size={file.size}
+                      lastModified={file.lastModified}
+                      itemCount={file.itemCount}
+                      url={file.url}
+                      onClick={() => handleClick(file)}
+                      fileActions={fileActions}
+                    />
+                  </Link>
+                ) : file.type === "folder" && getFolderUrl ? (
+                  <Link href={getFolderUrl(file)}>
+                    <FileCard
+                      id={file.id}
+                      name={file.name}
+                      type={file.type}
+                      size={file.size}
+                      lastModified={file.lastModified}
+                      itemCount={file.itemCount}
+                      onClick={() => handleClick(file)}
+                      fileActions={fileActions}
+                    />
+                  </Link>
+                ) : (
+                  <FileCard
+                    id={file.id}
+                    name={file.name}
+                    type={file.type}
+                    size={file.size}
+                    lastModified={file.lastModified}
+                    itemCount={file.itemCount}
+                    url={file.url}
+                    onClick={() => handleClick(file)}
+                    fileActions={fileActions}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-muted-foreground rounded-lg border p-8 text-center">
+            No files found
+          </div>
+        )}
+      </div>
+    </>
   );
 }

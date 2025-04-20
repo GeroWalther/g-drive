@@ -52,6 +52,29 @@ export const QUERIES = {
   },
 
   /**
+   * Get any item (file or folder) by ID
+   */
+  getItemById: async function (id: string): Promise<FileProps | null> {
+    try {
+      const item = await db
+        .select()
+        .from(fileItems)
+        .where(eq(fileItems.id, BigInt(id)))
+        .limit(1);
+
+      if (item.length === 0 || !item[0]) {
+        return null;
+      }
+
+      const itemProps = dbItemsToFileProps([item[0]]);
+      return itemProps[0] ?? null;
+    } catch (error) {
+      console.error("Error getting item by ID:", error);
+      return null;
+    }
+  },
+
+  /**
    * Get all folders (for breadcrumb navigation)
    */
   getAllFolders: async function (): Promise<FileProps[]> {

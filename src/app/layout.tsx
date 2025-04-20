@@ -3,6 +3,8 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
+
 export const metadata: Metadata = {
   title: "G-Drive",
   description: "Your files, accessible anywhere",
@@ -20,7 +22,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${geist.variable} dark`}>
-        <body className="bg-background font-sans antialiased">{children}</body>
+        <body className="bg-background font-sans antialiased">
+          {children}
+          <Toaster position="top-right" />
+        </body>
       </html>
     </ClerkProvider>
   );

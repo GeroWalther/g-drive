@@ -14,8 +14,10 @@ import {
   SpreadsheetIcon,
 } from "./Icons";
 import { type FileType } from "~/types/file";
+import { useFileActions } from "./FileActions";
 
 interface FileCardProps {
+  id?: string;
   name: string;
   type: FileType;
   size?: string;
@@ -23,9 +25,11 @@ interface FileCardProps {
   itemCount?: number;
   onClick?: () => void;
   url?: string;
+  fileActions?: ReturnType<typeof useFileActions>;
 }
 
 export function FileCard({
+  id,
   name,
   type,
   size,
@@ -33,7 +37,26 @@ export function FileCard({
   itemCount,
   onClick,
   url,
+  fileActions,
 }: FileCardProps) {
+  // Always create a default fileActions hook to satisfy React's rules
+  const defaultFileActions = useFileActions();
+
+  // Use provided fileActions or the default one
+  const { openRenameDialog, openDeleteDialog } =
+    fileActions ?? defaultFileActions;
+
+  // Create a file object to pass to actions
+  const file = {
+    id: id ?? "", // Use the id passed from parent
+    name,
+    type,
+    size,
+    lastModified,
+    itemCount,
+    url,
+  };
+
   // Function to stop event propagation for menu clicks
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,14 +79,23 @@ export function FileCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Download</DropdownMenuItem>
-                <DropdownMenuItem>Rename</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => file.id && openRenameDialog(file)}
+                >
+                  Rename
+                </DropdownMenuItem>
                 <DropdownMenuItem>Share</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => file.id && openDeleteDialog(file)}
+                >
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          {/* Menu actions will be handled by the shared FileActions component */}
+
           {type === "folder" ? (
             <div className="bg-secondary/20 flex h-40 items-center justify-center">
               <FolderIcon className="h-20 w-20 text-blue-500" />
