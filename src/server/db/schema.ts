@@ -22,6 +22,7 @@ export const fileItems = singlestoreTable("file_items", {
   url: text("url"), // null for folders
   parent_id: bigint("parent_id", { mode: "bigint" }), // null for root items
   item_count: int("item_count"), // for folder stats
+  user_id: text("user_id").notNull(), // clerk user id for ownership
   created_at: timestamp("created_at").defaultNow(),
   modified_at: timestamp("modified_at").defaultNow(),
 });

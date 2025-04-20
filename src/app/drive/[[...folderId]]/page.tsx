@@ -3,11 +3,23 @@ import { AppLayout } from "~/components/layout/AppLayout";
 import { notFound } from "next/navigation";
 import { QUERIES } from "~/server/db/queries";
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function GDrivePage(props: {
   params: Promise<{ folderId?: string[] }>;
 }) {
   const params = await props.params;
+  // Get current user ID for database queries
+  const { userId } = await auth();
+
+  // Log user ID for debugging
+  console.log("Drive page - User ID:", userId);
+
+  // Redirect if not authenticated
+  if (!userId) {
+    return notFound();
+  }
+
   // Determine if we're at root or in a folder
   const isRoot = !params.folderId || params.folderId.length === 0;
 
@@ -17,8 +29,8 @@ export default async function GDrivePage(props: {
 
   try {
     if (isRoot) {
-      // Fetch root level items
-      documents = await QUERIES.getRootItems();
+      // Fetch root level items with user ID
+      documents = await QUERIES.getRootItems(userId);
       breadcrumbPath = [
         { id: "root", name: "My Drive", type: "folder" as const },
       ];
@@ -39,16 +51,16 @@ export default async function GDrivePage(props: {
         return notFound();
       }
 
-      // Check if folder exists
-      currentFolder = await QUERIES.getFolderById(folderBigInt);
+      // Check if folder exists - pass the user ID
+      currentFolder = await QUERIES.getFolderById(folderBigInt, userId);
       if (!currentFolder) {
         console.error("Folder not found:", folderId);
         return notFound();
       }
 
-      // Get folder contents and breadcrumb path
-      documents = await QUERIES.getFolderContents(folderBigInt);
-      breadcrumbPath = await QUERIES.getBreadcrumbPath(folderBigInt);
+      // Get folder contents and breadcrumb path - pass the user ID
+      documents = await QUERIES.getFolderContents(folderBigInt, userId);
+      breadcrumbPath = await QUERIES.getBreadcrumbPath(folderBigInt, userId);
     }
 
     return (
@@ -67,6 +79,9 @@ export default async function GDrivePage(props: {
         <div className="p-8 text-center">
           <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
           <p>We couldn&apos;t load your files. Please try again later.</p>
+          <p className="mt-4 text-sm text-gray-500">
+            Error details: {String(error)}
+          </p>
         </div>
       </AppLayout>
     );

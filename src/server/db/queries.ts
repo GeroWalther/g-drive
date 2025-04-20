@@ -8,26 +8,31 @@ import { dbItemsToFileProps } from "~/lib/utils";
 
 export const QUERIES = {
   /**
-   * Get all items in a folder by parent_id
+   * Get all items in a folder by parent_id for a specific user
    */
-  getFolderContents: async function (folderId: bigint): Promise<FileProps[]> {
+  getFolderContents: async function (
+    folderId: bigint,
+    userId: string,
+  ): Promise<FileProps[]> {
     const folderContents = await db
       .select()
       .from(fileItems)
-      .where(eq(fileItems.parent_id, folderId))
+      .where(
+        and(eq(fileItems.parent_id, folderId), eq(fileItems.user_id, userId)),
+      )
       .orderBy(fileItems.name);
 
     return dbItemsToFileProps(folderContents);
   },
 
   /**
-   * Get all root items (with null parent_id)
+   * Get all root items (with null parent_id) for a specific user
    */
-  getRootItems: async function (): Promise<FileProps[]> {
+  getRootItems: async function (userId: string): Promise<FileProps[]> {
     const rootItems = await db
       .select()
       .from(fileItems)
-      .where(isNull(fileItems.parent_id))
+      .where(and(isNull(fileItems.parent_id), eq(fileItems.user_id, userId)))
       .orderBy(fileItems.name);
 
     return dbItemsToFileProps(rootItems);
@@ -36,11 +41,20 @@ export const QUERIES = {
   /**
    * Get folder details by ID
    */
-  getFolderById: async function (folderId: bigint): Promise<FileProps | null> {
+  getFolderById: async function (
+    folderId: bigint,
+    userId: string,
+  ): Promise<FileProps | null> {
     const folder = await db
       .select()
       .from(fileItems)
-      .where(and(eq(fileItems.id, folderId), eq(fileItems.type, "folder")))
+      .where(
+        and(
+          eq(fileItems.id, folderId),
+          eq(fileItems.type, "folder"),
+          eq(fileItems.user_id, userId),
+        ),
+      )
       .limit(1);
 
     if (folder.length === 0 || !folder[0]) {
@@ -91,9 +105,12 @@ export const QUERIES = {
    * Get all parent folders for a given folder ID
    * Returns array from root to immediate parent
    */
-  getBreadcrumbPath: async function (folderId: bigint): Promise<FileProps[]> {
+  getBreadcrumbPath: async function (
+    folderId: bigint,
+    userId: string,
+  ): Promise<FileProps[]> {
     // Start with the current folder
-    const folder = await QUERIES.getFolderById(folderId);
+    const folder = await QUERIES.getFolderById(folderId, userId);
     if (!folder) return [];
 
     const path: FileProps[] = [folder];
@@ -107,7 +124,7 @@ export const QUERIES = {
     while (currentParentId && iterations < maxIterations) {
       // Find parent folder
       const parentBigInt = BigInt(currentParentId);
-      const parent = await QUERIES.getFolderById(parentBigInt);
+      const parent = await QUERIES.getFolderById(parentBigInt, userId);
       if (!parent) break;
 
       // Add to start of array (so most distant parent comes first)
@@ -130,11 +147,19 @@ export const QUERIES = {
   /**
    * Search for files and folders by name
    */
-  searchItems: async function (query: string): Promise<FileProps[]> {
+  searchItems: async function (
+    query: string,
+    userId: string,
+  ): Promise<FileProps[]> {
     const items = await db
       .select()
       .from(fileItems)
-      .where(sql`${fileItems.name} LIKE ${`%${query}%`}`)
+      .where(
+        and(
+          sql`${fileItems.name} LIKE ${`%${query}%`}`,
+          eq(fileItems.user_id, userId),
+        ),
+      )
       .orderBy(fileItems.name);
 
     return dbItemsToFileProps(items);
@@ -161,6 +186,7 @@ export const MUTATIONS = {
   createFolder: async function (
     name: string,
     parentId: string | null,
+    userId: string,
   ): Promise<FileProps | null> {
     const parentBigInt = parentId ? BigInt(parentId) : null;
 
@@ -172,6 +198,7 @@ export const MUTATIONS = {
         parent_id: parentBigInt,
         size: null,
         item_count: 0,
+        user_id: userId,
       });
 
       // Find the newly created folder
@@ -181,7 +208,8 @@ export const MUTATIONS = {
         .where(
           sql`${fileItems.name} = ${name} AND 
               ${parentBigInt ? sql`${fileItems.parent_id} = ${parentBigInt}` : sql`${fileItems.parent_id} IS NULL`} AND 
-              ${fileItems.type} = 'folder'`,
+              ${fileItems.type} = 'folder' AND
+              ${fileItems.user_id} = ${userId}`,
         )
         /* eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-ts-comment */
         // @ts-ignore
@@ -207,6 +235,7 @@ export const MUTATIONS = {
     type: FileType,
     size: number,
     parentId: string | null,
+    userId: string,
   ): Promise<FileProps | null> {
     const parentBigInt = parentId ? BigInt(parentId) : null;
 
@@ -217,6 +246,7 @@ export const MUTATIONS = {
         type,
         size,
         parent_id: parentBigInt,
+        user_id: userId,
       });
 
       // Update parent folder's item count
@@ -231,7 +261,8 @@ export const MUTATIONS = {
         .where(
           sql`${fileItems.name} = ${name} AND 
               ${parentBigInt ? sql`${fileItems.parent_id} = ${parentBigInt}` : sql`${fileItems.parent_id} IS NULL`} AND 
-              ${fileItems.type} = ${type}`,
+              ${fileItems.type} = ${type} AND
+              ${fileItems.user_id} = ${userId}`,
         )
         /* eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-ts-comment */
         // @ts-ignore

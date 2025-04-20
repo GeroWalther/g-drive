@@ -24,10 +24,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create folder in database
+    // Create folder in database with user ID
     const folder = await MUTATIONS.createFolder(
       name.trim(),
       typeof parentId === "string" ? parentId : null,
+      user.userId,
     );
 
     if (!folder) {

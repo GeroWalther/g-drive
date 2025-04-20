@@ -97,6 +97,7 @@ export async function POST(request: Request) {
           fileType,
           file.size,
           folderId,
+          user.userId,
         );
 
         // Update the file with the URL (since createFile doesn't accept url)

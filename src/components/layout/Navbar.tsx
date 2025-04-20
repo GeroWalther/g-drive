@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 // import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -9,32 +11,62 @@ import { Button } from "~/components/ui/button";
 //   DropdownMenuSeparator,
 //   DropdownMenuTrigger,
 // } from "~/components/ui/dropdown-menu";
-import { Input } from "../ui/input";
+import { Input } from "~/components/ui/input";
 import { UserButton } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
 
 export function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // If we navigate away from search, clear the search query
+  useEffect(() => {
+    if (!pathname.startsWith("/search")) {
+      setSearchQuery("");
+    }
+  }, [pathname]);
+
+  // Handle search form submission
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
-    <nav className="flex h-16 w-full items-center justify-between border-b px-4 md:px-6">
-      <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2">
+    <header className="bg-background sticky top-0 z-50 flex h-16 w-full shrink-0 items-center justify-between border-b px-4 md:px-6">
+      <div className="flex items-center gap-6">
+        <Link
+          href="/drive"
+          className="mr-2 flex items-center gap-2 text-xl font-bold"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="h-6 w-6 text-blue-600"
+            className="text-primary"
           >
-            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-            <path d="M9 17h6" />
-            <path d="M9 13h6" />
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
+            <path d="M13 2v7h7" />
           </svg>
-          <span className="text-xl font-semibold">G-Drive</span>
+          G-Drive
         </Link>
       </div>
-      <div className="relative mx-auto hidden max-w-md flex-1 md:block lg:max-w-lg">
+      <form
+        onSubmit={handleSearch}
+        className="relative mx-auto max-w-md flex-1 md:block lg:max-w-lg"
+      >
         <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -54,10 +86,17 @@ export function Navbar() {
           type="search"
           placeholder="Search in Drive"
           className="bg-secondary/50 w-full border-none pl-10"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div>
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="rounded-full md:hidden">
+      </form>
+      {/* <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full md:hidden"
+          onClick={() => router.push("/search")}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -72,11 +111,13 @@ export function Navbar() {
             <path d="m21 21-4.3-4.3" />
           </svg>
           <span className="sr-only">Search</span>
-        </Button>
+        </Button> */}
 
+      <div className="ml-2 flex items-center gap-4">
         <UserButton />
+      </div>
 
-        {/* <DropdownMenu>
+      {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
@@ -98,7 +139,7 @@ export function Navbar() {
             <DropdownMenuItem>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu> */}
-      </div>
-    </nav>
+      {/* </div> */}
+    </header>
   );
 }

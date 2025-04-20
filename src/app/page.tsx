@@ -5,10 +5,14 @@ import {
   SignInButton,
   SignedOut,
 } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
   // redirect("/drive");
+  // Log the current user ID for database updates
+  const { userId } = await auth();
+  console.log("Current user ID for database:", userId);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-black p-4 text-white">
