@@ -6,7 +6,7 @@ import path from "path";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> | { id: string } },
 ) {
   const user = await auth();
   if (!user.userId) {
@@ -14,7 +14,10 @@ export async function DELETE(
   }
 
   try {
-    const id = params.id;
+    // Handle both Promise<params> and direct params scenarios
+    const resolvedParams = "then" in params ? await params : params;
+    const { id } = resolvedParams;
+
     if (!id) {
       return NextResponse.json(
         { error: "Item ID is required" },
@@ -60,7 +63,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> | { id: string } },
 ) {
   const user = await auth();
   if (!user.userId) {
@@ -68,7 +71,10 @@ export async function PATCH(
   }
 
   try {
-    const id = params.id;
+    // Handle both Promise<params> and direct params scenarios
+    const resolvedParams = "then" in params ? await params : params;
+    const { id } = resolvedParams;
+
     if (!id) {
       return NextResponse.json(
         { error: "Item ID is required" },
