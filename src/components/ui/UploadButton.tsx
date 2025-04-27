@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { type FileProps } from "~/types/file";
 
 interface UploadButtonProps {
   folderId?: string | null;
@@ -187,9 +188,28 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  // Store the folder ID in state when component mounts to ensure it's stable
+  const [stableFolderId, setStableFolderId] = useState<string | null>(null);
 
-  // Log the folderId for debugging
-  console.log("NewFolderButton - folderId:", folderId);
+  // Update stableFolderId when folderId prop changes
+  useEffect(() => {
+    const isValidId =
+      typeof folderId === "string" &&
+      folderId.trim() !== "" &&
+      folderId !== "null";
+    console.log(
+      "NewFolderButton - received folderId:",
+      folderId,
+      "isValid:",
+      isValidId,
+    );
+
+    if (isValidId) {
+      setStableFolderId(folderId);
+    } else {
+      setStableFolderId(null);
+    }
+  }, [folderId]);
 
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
@@ -197,7 +217,7 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
     setIsCreating(true);
 
     try {
-      console.log("Creating folder with parentId:", folderId);
+      console.log("Creating folder with parentId:", stableFolderId);
 
       // Call the folder creation API
       const response = await fetch("/api/folders", {
@@ -207,7 +227,7 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
         },
         body: JSON.stringify({
           name: folderName.trim(),
-          parentId: folderId,
+          parentId: stableFolderId,
         }),
       });
 
@@ -217,7 +237,7 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
       }
 
       // Log the response for debugging
-      const folderData = await response.json();
+      const folderData = (await response.json()) as FileProps;
       console.log("Folder created:", folderData);
 
       // Refresh the page to show the new folder

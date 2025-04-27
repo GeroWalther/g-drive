@@ -17,6 +17,19 @@ const getStoredViewMode = (): "grid" | "list" => {
   return "list"; // Default for SSR
 };
 
+// Extract folder ID from a URL path
+const extractFolderIdFromUrl = (path: string): string | null => {
+  // Match only digits after /drive/
+  const drivePattern = /^\/drive\/(\d+)(?:\/.*)?$/;
+  const match = drivePattern.exec(path);
+
+  if (match?.[1]) {
+    return match[1];
+  }
+
+  return null;
+};
+
 interface FilesContainerProps {
   files: FileProps[];
   onFolderClick?: (file: FileProps) => void;
@@ -36,10 +49,30 @@ export function FilesContainer({
 }: FilesContainerProps) {
   // Initialize with a default value, will be updated in useEffect
   const [view, setView] = useState<"grid" | "list">("list");
+  // Store current folder ID in state to ensure stability
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   // Load the view mode from localStorage on component mount
+  // and determine the current folder ID
   useEffect(() => {
     setView(getStoredViewMode());
+
+    // Determine and set current folder ID
+    if (typeof window !== "undefined") {
+      try {
+        const path = window.location.pathname;
+        console.log("Current path on component mount:", path);
+
+        // Try to extract folder ID from URL
+        const folderId = extractFolderIdFromUrl(path);
+        console.log("Folder ID from URL (useEffect):", folderId);
+
+        // Set the folder ID in state
+        setCurrentFolderId(folderId);
+      } catch (error) {
+        console.error("Error extracting folder ID:", error);
+      }
+    }
   }, []);
 
   // Update view mode in state and localStorage when changed
@@ -47,43 +80,6 @@ export function FilesContainer({
     setView(newView);
     if (typeof window !== "undefined") {
       localStorage.setItem("gdrive-view-mode", newView);
-    }
-  };
-
-  // Get current folder ID if applicable
-  const getCurrentFolderId = (): string | null => {
-    // If we don't have access to window, we're in SSR
-    if (typeof window === "undefined") return null;
-
-    try {
-      // Get current path from URL
-      const path = window.location.pathname;
-      console.log("Current path:", path);
-
-      // Extract folder ID directly from URL - use pattern matching
-      // This matches patterns like /drive/123 or /drive/123/some-folder-name
-      const drivePattern = /^\/drive\/(\d+)(?:\/.*)?$/;
-      const match = drivePattern.exec(path);
-
-      if (match?.[1]) {
-        const folderId = match[1];
-        console.log("Found folder ID from URL pattern:", folderId);
-        return folderId;
-      }
-
-      // If we're at the root drive path with no ID
-      if (path === "/drive") {
-        console.log("At root drive path");
-        return null;
-      }
-
-      // Final fallback to the utility function
-      const extractedId = extractFolderIdFromPath(path);
-      console.log("Extracted folder ID from utility:", extractedId);
-      return extractedId;
-    } catch (error) {
-      console.error("Error getting current folder ID:", error);
-      return null;
     }
   };
 
@@ -96,8 +92,8 @@ export function FilesContainer({
 
         {!readOnly && (
           <div className="flex items-center gap-2">
-            <NewFolderButton folderId={getCurrentFolderId()} />
-            <UploadButton folderId={getCurrentFolderId()} />
+            <NewFolderButton folderId={currentFolderId} />
+            <UploadButton folderId={currentFolderId} />
           </div>
         )}
       </div>
