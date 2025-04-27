@@ -4,10 +4,6 @@ import { generateDownloadUrl } from "../../../../lib/s3";
 import { db } from "../../../../server/db";
 import { fileItems } from "../../../../server/db/schema";
 import { eq } from "drizzle-orm";
-import type { InferSelectModel } from "drizzle-orm";
-
-// Define a proper type for the file based on the schema
-type FileItem = InferSelectModel<typeof fileItems>;
 
 // This interface defines how our database query response should be typed
 interface FileRecord {
