@@ -188,12 +188,17 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
   const [folderName, setFolderName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
+  // Log the folderId for debugging
+  console.log("NewFolderButton - folderId:", folderId);
+
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
 
     setIsCreating(true);
 
     try {
+      console.log("Creating folder with parentId:", folderId);
+
       // Call the folder creation API
       const response = await fetch("/api/folders", {
         method: "POST",
@@ -210,6 +215,10 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
         const errorData = (await response.json()) as { error?: string };
         throw new Error(errorData.error ?? "Failed to create folder");
       }
+
+      // Log the response for debugging
+      const folderData = await response.json();
+      console.log("Folder created:", folderData);
 
       // Refresh the page to show the new folder
       router.refresh();

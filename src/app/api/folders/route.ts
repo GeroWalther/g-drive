@@ -17,6 +17,14 @@ export async function POST(request: Request) {
     const data = (await request.json()) as Partial<CreateFolderRequest>;
     const { name, parentId } = data;
 
+    // Log the received data
+    console.log("Folder creation API called with:", {
+      name,
+      parentId,
+      userId: user.userId,
+      parentIdType: parentId ? typeof parentId : "null",
+    });
+
     if (!name || typeof name !== "string" || name.trim() === "") {
       return NextResponse.json(
         { error: "Folder name is required" },
@@ -24,10 +32,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ensure parentId is properly handled (null or valid string)
+    const finalParentId =
+      typeof parentId === "string" && parentId !== "null" && parentId !== ""
+        ? parentId
+        : null;
+
+    // Log the finalized parentId
+    console.log("Creating folder with finalized parentId:", finalParentId);
+
     // Create folder in database with user ID
     const folder = await MUTATIONS.createFolder(
       name.trim(),
-      typeof parentId === "string" ? parentId : null,
+      finalParentId,
       user.userId,
     );
 
@@ -37,6 +54,9 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Log created folder
+    console.log("Folder created successfully:", folder);
 
     return NextResponse.json(folder);
   } catch (error) {

@@ -55,27 +55,36 @@ export function FilesContainer({
     // If we don't have access to window, we're in SSR
     if (typeof window === "undefined") return null;
 
-    // Get current path from URL
-    const path = window.location.pathname;
+    try {
+      // Get current path from URL
+      const path = window.location.pathname;
+      console.log("Current path:", path);
 
-    // Extract folder ID directly from URL
-    const pathSegments = path.split("/").filter(Boolean);
+      // Extract folder ID directly from URL - use pattern matching
+      // This matches patterns like /drive/123 or /drive/123/some-folder-name
+      const drivePattern = /^\/drive\/(\d+)(?:\/.*)?$/;
+      const match = drivePattern.exec(path);
 
-    // Check if we're in a drive path
-    if (pathSegments[0] === "drive") {
-      // Second segment should be the folder ID
-      if (pathSegments.length > 1) {
-        const secondSegment = pathSegments[1];
-
-        // Check if it's numeric
-        if (secondSegment && /^\d+$/.test(secondSegment)) {
-          return secondSegment;
-        }
+      if (match?.[1]) {
+        const folderId = match[1];
+        console.log("Found folder ID from URL pattern:", folderId);
+        return folderId;
       }
-    }
 
-    // Fallback to utility function
-    return extractFolderIdFromPath(path);
+      // If we're at the root drive path with no ID
+      if (path === "/drive") {
+        console.log("At root drive path");
+        return null;
+      }
+
+      // Final fallback to the utility function
+      const extractedId = extractFolderIdFromPath(path);
+      console.log("Extracted folder ID from utility:", extractedId);
+      return extractedId;
+    } catch (error) {
+      console.error("Error getting current folder ID:", error);
+      return null;
+    }
   };
 
   return (
