@@ -4,7 +4,6 @@ import Link from "next/link";
 import { type FileProps } from "~/types/file";
 import { FileCard } from "./FileCard";
 import { FileActions, useFileActions } from "./FileActions";
-import { useState } from "react";
 
 interface FilesGridProps {
   files: FileProps[];
@@ -23,9 +22,6 @@ export function FilesGrid({
 }: FilesGridProps) {
   // Use a single shared instance of fileActions
   const fileActions = useFileActions();
-
-  // Sharing button test
-  const [showSharing, setShowSharing] = useState(false);
 
   const handleClick = (file: FileProps) => {
     if (file.type === "folder" && onFolderClick) {
