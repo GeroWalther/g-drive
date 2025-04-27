@@ -45,8 +45,8 @@ export default function GDrive({
   // Handle file clicks - open in new tab
   const handleFileClick = (file: FileProps) => {
     if (file.type !== "folder" && file.url) {
-      // Open in new tab
-      window.open(file.url, "_blank", "noopener,noreferrer");
+      // Let the FileCard handle URL refreshing and opening
+      // The actual URL opening happens in the FileCard component
     }
   };
 

@@ -24,7 +24,7 @@ const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME ?? "";
 export async function generateUploadUrl(
   key: string,
   contentType: string,
-  expiresIn = 3600,
+  expiresIn = 2592000,
 ) {
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
@@ -39,7 +39,7 @@ export async function generateUploadUrl(
 /**
  * Generates a presigned URL for downloading/viewing a file from S3
  */
-export async function generateDownloadUrl(key: string, expiresIn = 3600) {
+export async function generateDownloadUrl(key: string, expiresIn = 2592000) {
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,

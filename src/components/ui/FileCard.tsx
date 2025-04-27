@@ -18,6 +18,7 @@ import { useFileActions, directShare } from "./FileActions";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ShareLinkDialog } from "~/components/ShareLinkDialog";
+import { refreshFileUrl } from "~/lib/url-refresh";
 
 interface FileCardProps {
   id?: string;
@@ -86,11 +87,93 @@ export function FileCard({
     setShowShareDialog(true);
   };
 
+  // Handle file click with URL refreshing if needed
+  const handleFileClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (type === "folder" || !url || !id) {
+      // For folders, use the default onClick behavior
+      onClick?.();
+      return;
+    }
+
+    try {
+      // Check if the URL contains a signature date parameter (common in S3 presigned URLs)
+      // Example: X-Amz-Date=20230427T123456Z or similar in the URL
+      const urlObj = new URL(url);
+      const amzDateParam = urlObj.searchParams.get("X-Amz-Date");
+      const signatureParam = urlObj.searchParams.get("X-Amz-Signature");
+      const expiresParam = urlObj.searchParams.get("X-Amz-Expires");
+
+      // If this looks like a presigned URL and has date information
+      if (signatureParam && (amzDateParam || expiresParam)) {
+        let shouldRefresh = false;
+
+        // Check if we have a date to parse
+        if (amzDateParam) {
+          // Parse date from format like "20230427T123456Z"
+          try {
+            const dateStr = amzDateParam;
+            // Add separation characters for proper date parsing: "2023-04-27T12:34:56Z"
+            const formattedDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}T${dateStr.slice(9, 11)}:${dateStr.slice(11, 13)}:${dateStr.slice(13, 15)}Z`;
+
+            const signatureDate = new Date(formattedDate);
+            const now = new Date();
+
+            // If URL is over 25 days old, proactively refresh it
+            // This prevents users from encountering expired URLs
+            const daysSinceGeneration =
+              (now.getTime() - signatureDate.getTime()) / (1000 * 60 * 60 * 24);
+
+            if (daysSinceGeneration > 25) {
+              console.log(
+                `URL is ${Math.floor(daysSinceGeneration)} days old, refreshing proactively`,
+              );
+              shouldRefresh = true;
+            }
+          } catch (error) {
+            console.error("Error parsing date from URL:", error);
+          }
+        }
+
+        // Refresh the URL if needed before opening
+        if (shouldRefresh) {
+          const refreshedUrl = await refreshFileUrl(id);
+          if (refreshedUrl) {
+            window.open(refreshedUrl, "_blank", "noopener,noreferrer");
+            return;
+          }
+        }
+      }
+
+      // Open the file with the existing URL if no refresh was needed
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.error("Error processing file URL:", error);
+
+      // If any error occurs, try to refresh the URL as a fallback
+      try {
+        const refreshedUrl = await refreshFileUrl(id);
+        if (refreshedUrl) {
+          window.open(refreshedUrl, "_blank", "noopener,noreferrer");
+        } else {
+          // If refresh fails, try with original URL as last resort
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+      } catch (refreshError) {
+        console.error("Failed to refresh URL:", refreshError);
+        // Open with original URL as last resort
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    }
+  };
+
   return (
     <>
       <Card
         className="group cursor-pointer overflow-hidden transition-all hover:shadow-md"
-        onClick={onClick}
+        onClick={type !== "folder" ? handleFileClick : onClick}
       >
         <CardContent className="p-0">
           <div className="relative">
