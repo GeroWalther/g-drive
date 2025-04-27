@@ -40,25 +40,6 @@ export function FilesGrid({
 
   return (
     <>
-      {/* Test share button */}
-      <div style={{ marginBottom: "1rem" }}>
-        <button
-          style={{
-            background: "blue",
-            color: "white",
-            padding: "0.5rem 1rem",
-            borderRadius: "0.25rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-          onClick={() => {
-            window.alert("Global share button clicked!");
-          }}
-        >
-          Test Global Share Button
-        </button>
-      </div>
-
       {/* Render the FileActions component once, outside the file loop */}
       {fileActions.selectedFile && (
         <FileActions
