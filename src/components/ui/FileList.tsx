@@ -104,6 +104,12 @@ export function FileList({
                     <Link
                       href={getLinkUrl(file) ?? "#"}
                       className="font-medium"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        // Stop propagation to prevent handleClick from being called
+                        e.stopPropagation();
+                      }}
                     >
                       {file.name}
                     </Link>

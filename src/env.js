@@ -16,6 +16,11 @@ export const env = createEnv({
     SINGLE_STORE_USER: z.string(),
     SINGLE_STORE_PASS: z.string(),
     SINGLE_STORE_DB_NAME: z.string(),
+    // AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    AWS_REGION: z.string().optional().default("eu-north-1"),
+    AWS_S3_BUCKET_NAME: z.string().optional(),
   },
 
   /**
@@ -39,6 +44,11 @@ export const env = createEnv({
     SINGLE_STORE_USER: process.env.SINGLE_STORE_USER,
     SINGLE_STORE_PASS: process.env.SINGLE_STORE_PASS,
     SINGLE_STORE_DB_NAME: process.env.SINGLE_STORE_DB_NAME,
+    // AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION,
+    AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

@@ -152,26 +152,14 @@ export function buildFolderPath(
  * @returns The folder ID or null if not found
  */
 export function extractFolderIdFromPath(path: string): string | null {
-  const parts = path.split("/").filter(Boolean);
+  // Use a regex to extract the folder ID from drive URLs
+  // This handles both /drive/{id} and /drive/{id}/{name} patterns
+  const driveIdPattern = /^\/drive\/(\d+)(?:\/.*)?$/;
+  const match = driveIdPattern.exec(path);
 
-  // Not a drive path
-  if (parts.length === 0 || parts[0] !== "drive") {
-    return null;
+  if (match?.[1]) {
+    return match[1];
   }
 
-  // Root drive path
-  if (parts.length === 1) {
-    return null;
-  }
-
-  // For paths like /drive/{folderId}
-  if (parts.length === 2) {
-    return parts[1] ?? null;
-  }
-
-  // For paths like /drive/{parentId}/{folderName}
-  // We need to handle this differently in the FilesContainer component
-  // which has access to the folder list to look up by name
-  // Here we just return the parent ID
-  return parts[1] ?? null;
+  return null;
 }

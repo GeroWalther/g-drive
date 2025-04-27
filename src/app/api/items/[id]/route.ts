@@ -1,8 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { MUTATIONS, QUERIES } from "~/server/db/queries";
-import fs from "fs";
-import path from "path";
+import { MUTATIONS } from "~/server/db/queries";
 
 export async function DELETE(
   request: Request,
@@ -25,10 +23,8 @@ export async function DELETE(
       );
     }
 
-    // Get the file URL first (to delete the physical file if necessary)
-    const item = await QUERIES.getItemById(id);
-
-    // Delete the item from the database
+    // Delete the item from the database and S3 if applicable
+    // The MUTATIONS.deleteItem function now handles S3 deletion internally
     const deleted = await MUTATIONS.deleteItem(id);
 
     if (!deleted) {
@@ -36,19 +32,6 @@ export async function DELETE(
         { error: "Failed to delete item" },
         { status: 500 },
       );
-    }
-
-    // If it was a file with a URL, delete the physical file
-    if (item?.url && item.type !== "folder") {
-      try {
-        const filePath = path.join(process.cwd(), "public", item.url);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      } catch (fileError) {
-        console.error("Error deleting physical file:", fileError);
-        // We still return success since the DB entry was deleted
-      }
     }
 
     return NextResponse.json({ success: true });

@@ -37,6 +37,19 @@ export default function GDrive({
     return "#";
   };
 
+  // Helper function to get link URL for files
+  const getLinkUrl = (file: FileProps) => {
+    return file.type !== "folder" && file.url ? file.url : undefined;
+  };
+
+  // Handle file clicks - open in new tab
+  const handleFileClick = (file: FileProps) => {
+    if (file.type !== "folder" && file.url) {
+      // Open in new tab
+      window.open(file.url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   // Create breadcrumb items with proper hrefs
   const breadcrumbItems = breadcrumbPath.map((folder) => ({
     label: folder.name,
@@ -54,6 +67,8 @@ export default function GDrive({
         <FilesContainer
           files={documents}
           getFolderUrl={getFolderUrl}
+          getLinkUrl={getLinkUrl}
+          onFileClick={handleFileClick}
           onFolderClick={(file) => {
             // This is now mainly used for analytics or other side effects,
             // since navigation is handled by Link components

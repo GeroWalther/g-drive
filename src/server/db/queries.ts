@@ -5,6 +5,7 @@ import { fileItems } from "~/server/db/schema";
 import { eq, isNull, and, sql } from "drizzle-orm";
 import { type FileProps, type FileType } from "~/types/file";
 import { dbItemsToFileProps } from "~/lib/utils";
+import { deleteFile } from "~/lib/s3";
 
 export const QUERIES = {
   /**
@@ -495,6 +496,28 @@ export const MUTATIONS = {
       }
 
       const parentId = item[0]?.parent_id;
+
+      // Check if file is stored in S3 and delete from S3 if it is
+      try {
+        // If it's not a folder and has metadata with s3Key
+        if (item[0]?.type !== "folder" && item[0]?.metadata) {
+          try {
+            const metadataData = JSON.parse(item[0]?.metadata) as {
+              s3Key?: string;
+            };
+            if (metadataData.s3Key) {
+              // Delete from S3
+              await deleteFile(metadataData.s3Key);
+              console.log(`Deleted file from S3: ${metadataData.s3Key}`);
+            }
+          } catch (parseError) {
+            console.error("Error parsing metadata JSON:", parseError);
+          }
+        }
+      } catch (s3Error) {
+        console.error("Error deleting file from S3:", s3Error);
+        // Continue with deleting from database even if S3 delete fails
+      }
 
       // Delete the item
       await db.delete(fileItems).where(eq(fileItems.id, BigInt(id)));

@@ -73,7 +73,15 @@ export function FilesGrid({
             {files.map((file) => (
               <div key={file.id}>
                 {getLinkUrl?.(file) ? (
-                  <Link href={getLinkUrl(file) ?? "#"}>
+                  <Link
+                    href={getLinkUrl(file) ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      // Let the link open in a new tab but prevent other handlers
+                      e.stopPropagation();
+                    }}
+                  >
                     <FileCard
                       id={file.id}
                       name={file.name}
@@ -82,7 +90,6 @@ export function FilesGrid({
                       lastModified={file.lastModified}
                       itemCount={file.itemCount}
                       url={file.url}
-                      onClick={() => handleClick(file)}
                       fileActions={fileActions}
                     />
                   </Link>

@@ -25,6 +25,7 @@ export const fileItems = singlestoreTable("file_items", {
   user_id: text("user_id").notNull(), // clerk user id for ownership
   share_id: text("share_id"), // unique identifier for sharing
   is_public: int("is_public").default(0), // 0 = private, 1 = public via share link
+  metadata: text("metadata"), // for storing metadata like S3 keys as JSON
   created_at: timestamp("created_at").defaultNow(),
   modified_at: timestamp("modified_at").defaultNow(),
 });

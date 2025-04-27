@@ -14,11 +14,24 @@ interface UploadButtonProps {
   folderId?: string | null;
 }
 
+interface PresignedResponse {
+  uploadUrl: string;
+  fileKey: string;
+  contentType: string;
+  fileName: string;
+  folderId?: string | null;
+}
+
+interface ErrorResponse {
+  error?: string;
+}
+
 export function UploadButton({ folderId }: UploadButtonProps) {
   const router = useRouter();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileUpload = () => {
     // Simple file input click handler
@@ -31,27 +44,76 @@ export function UploadButton({ folderId }: UploadButtonProps) {
       if (!files || files.length === 0) return;
 
       setIsUploading(true);
+      setUploadProgress(0);
       setIsComplete(false);
       setUploadDialogOpen(true);
 
       try {
-        // Create FormData and append all files
-        const formData = new FormData();
-        Array.from(files).forEach((file) => {
-          formData.append("files", file);
-        });
+        // Process each file with client-side upload
+        for (const file of Array.from(files)) {
+          // Step 1: Get a presigned URL for S3 upload
+          const presignedUrlResponse = await fetch("/api/s3/presigned", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              fileName: file.name,
+              contentType: file.type,
+              folderId: folderId,
+            }),
+          });
 
-        // Upload files to the server with the folderId
-        const endpoint = `/api/upload${folderId ? `?folderId=${folderId}` : ""}`;
+          if (!presignedUrlResponse.ok) {
+            const errorData =
+              (await presignedUrlResponse.json()) as ErrorResponse;
+            throw new Error(errorData.error ?? "Failed to get upload URL");
+          }
 
-        const uploadResponse = await fetch(endpoint, {
-          method: "POST",
-          body: formData,
-        });
+          const { uploadUrl, fileKey } =
+            (await presignedUrlResponse.json()) as PresignedResponse;
 
-        if (!uploadResponse.ok) {
-          const errorData = (await uploadResponse.json()) as { error?: string };
-          throw new Error(errorData.error ?? "Upload failed");
+          // Step 2: Upload the file directly to S3
+          setUploadProgress(10); // Starting the upload
+
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type,
+            },
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(
+              `Failed to upload file to S3: ${uploadResponse.statusText}`,
+            );
+          }
+
+          setUploadProgress(70); // Upload to S3 complete
+
+          // Step 3: Complete the upload by recording in the database
+          const completeResponse = await fetch("/api/s3/complete", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              fileKey,
+              fileName: file.name,
+              contentType: file.type,
+              size: file.size,
+              folderId,
+            }),
+          });
+
+          if (!completeResponse.ok) {
+            const errorData = (await completeResponse.json()) as ErrorResponse;
+            throw new Error(errorData.error ?? "Failed to complete upload");
+          }
+
+          // Update progress for each file
+          setUploadProgress(100);
         }
 
         // Handle successful upload
@@ -63,7 +125,7 @@ export function UploadButton({ folderId }: UploadButtonProps) {
           router.refresh();
           setUploadDialogOpen(false);
           setIsComplete(false);
-        }, 1500);
+        }, 500);
       } catch (error) {
         console.error("Upload error:", error);
         setIsUploading(false);
@@ -102,8 +164,8 @@ export function UploadButton({ folderId }: UploadButtonProps) {
                 <div className="mb-2 text-center">Uploading...</div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                   <div
-                    className="animate-progress h-full rounded-full bg-blue-500"
-                    style={{ width: "60%" }}
+                    className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
               </div>

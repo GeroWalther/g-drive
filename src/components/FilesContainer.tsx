@@ -42,20 +42,6 @@ export function FilesContainer({
     setView(getStoredViewMode());
   }, []);
 
-  // Separate effect for logging files to avoid dependency array size issues
-  useEffect(() => {
-    // Debug - log all folders in the current files list
-    console.log(
-      "Files in current view:",
-      files.map((file) => ({
-        id: file.id,
-        name: file.name,
-        type: file.type,
-        parentId: file.parentId,
-      })),
-    );
-  }, [files]);
-
   // Update view mode in state and localStorage when changed
   const handleViewChange = (newView: "grid" | "list") => {
     setView(newView);
@@ -71,39 +57,25 @@ export function FilesContainer({
 
     // Get current path from URL
     const path = window.location.pathname;
-    console.log("Current path:", path);
 
-    // Basic extraction - gets parent ID for nested paths
-    const basicFolderId = extractFolderIdFromPath(path);
-    console.log("Basic folder ID:", basicFolderId);
+    // Extract folder ID directly from URL
+    const pathSegments = path.split("/").filter(Boolean);
 
-    if (!basicFolderId) return null;
+    // Check if we're in a drive path
+    if (pathSegments[0] === "drive") {
+      // Second segment should be the folder ID
+      if (pathSegments.length > 1) {
+        const secondSegment = pathSegments[1];
 
-    // For nested paths like /drive/{parentId}/{folderName}
-    const parts = path.split("/").filter((part) => part);
-    if (parts.length > 2 && parts[0] === "drive") {
-      // Last part is the folder name, not the ID
-      const folderName = parts[parts.length - 1];
-      console.log("Looking for folder by name:", folderName);
-
-      // Try to find the folder ID by name in the current files list
-      const foundFolder = files.find(
-        (file) => file.type === "folder" && file.name === folderName,
-      );
-
-      if (foundFolder) {
-        console.log(
-          "Found folder by name:",
-          foundFolder.name,
-          "ID:",
-          foundFolder.id,
-        );
-        return foundFolder.id;
+        // Check if it's numeric
+        if (secondSegment && /^\d+$/.test(secondSegment)) {
+          return secondSegment;
+        }
       }
     }
 
-    // Fall back to basic folder ID (parent ID)
-    return basicFolderId;
+    // Fallback to utility function
+    return extractFolderIdFromPath(path);
   };
 
   return (
