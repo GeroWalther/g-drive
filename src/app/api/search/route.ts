@@ -7,12 +7,9 @@ import { QUERIES } from "~/server/db/queries";
 export async function GET(request: Request) {
   // Authenticate the user
   const user = await auth();
-  if (!user.userId) {
+  if (!user || !user.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  // Log the current user ID for database updates
-  console.log("Current user ID for database:", user.userId);
 
   try {
     // Get the search query from URL parameter

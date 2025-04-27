@@ -11,9 +11,6 @@ export default async function GDrivePage(props: {
   // Get current user ID for database queries
   const { userId } = await auth();
 
-  // Log user ID for debugging
-  console.log("Drive page - User ID:", userId);
-
   // Redirect if not authenticated
   if (!userId) {
     return notFound();

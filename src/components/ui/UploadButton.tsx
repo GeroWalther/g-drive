@@ -197,12 +197,6 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
       typeof folderId === "string" &&
       folderId.trim() !== "" &&
       folderId !== "null";
-    console.log(
-      "NewFolderButton - received folderId:",
-      folderId,
-      "isValid:",
-      isValidId,
-    );
 
     if (isValidId) {
       setStableFolderId(folderId);
@@ -217,8 +211,6 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
     setIsCreating(true);
 
     try {
-      console.log("Creating folder with parentId:", stableFolderId);
-
       // Call the folder creation API
       const response = await fetch("/api/folders", {
         method: "POST",
@@ -236,9 +228,8 @@ export function NewFolderButton({ folderId }: { folderId?: string | null }) {
         throw new Error(errorData.error ?? "Failed to create folder");
       }
 
-      // Log the response for debugging
+      // Parse the response
       const folderData = (await response.json()) as FileProps;
-      console.log("Folder created:", folderData);
 
       // Refresh the page to show the new folder
       router.refresh();

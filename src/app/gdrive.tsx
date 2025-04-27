@@ -72,7 +72,6 @@ export default function GDrive({
           onFolderClick={(file) => {
             // This is now mainly used for analytics or other side effects,
             // since navigation is handled by Link components
-            console.log("Folder clicked:", file.name);
           }}
         />
       </section>

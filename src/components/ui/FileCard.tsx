@@ -79,22 +79,11 @@ export function FileCard({
       return;
     }
 
-    console.log("Share button clicked for file:", file);
-
     // Create a share URL using the current origin
     const origin = window.location.origin;
     const generatedShareUrl = `${origin}/shared/${file.id}`;
-    console.log("Setting share URL:", generatedShareUrl);
     setShareUrl(generatedShareUrl);
-
-    console.log("Opening share dialog, current state:", { showShareDialog });
     setShowShareDialog(true);
-    console.log("Share dialog should now be open, new state will be:", true);
-
-    // Force re-render with setTimeout
-    setTimeout(() => {
-      console.log("After timeout, share dialog state:", { showShareDialog });
-    }, 100);
   };
 
   return (

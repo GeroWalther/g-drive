@@ -7,12 +7,16 @@ import {
 } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
-  // redirect("/drive");
-  // Log the current user ID for database updates
+  // Get current user ID for database
   const { userId } = await auth();
-  console.log("Current user ID for database:", userId);
+
+  // Redirect to drive if authenticated
+  if (userId) {
+    redirect("/drive");
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-black p-4 text-white">

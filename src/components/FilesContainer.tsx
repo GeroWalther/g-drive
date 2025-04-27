@@ -61,11 +61,9 @@ export function FilesContainer({
     if (typeof window !== "undefined") {
       try {
         const path = window.location.pathname;
-        console.log("Current path on component mount:", path);
 
         // Try to extract folder ID from URL
         const folderId = extractFolderIdFromUrl(path);
-        console.log("Folder ID from URL (useEffect):", folderId);
 
         // Set the folder ID in state
         setCurrentFolderId(folderId);
