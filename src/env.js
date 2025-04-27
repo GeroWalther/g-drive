@@ -11,7 +11,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    SINGLE_STORE_HOST: z.string().url(),
+    SINGLE_STORE_HOST: z.string(),
     SINGLE_STORE_PORT: z.string(),
     SINGLE_STORE_USER: z.string(),
     SINGLE_STORE_PASS: z.string(),
