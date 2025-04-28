@@ -65,56 +65,86 @@ export function UploadButton({ folderId }: UploadButtonProps) {
             }),
           });
 
+          // Parse the response once and store the result
+          const presignedData =
+            (await presignedUrlResponse.json()) as PresignedResponse &
+              ErrorResponse;
+
           if (!presignedUrlResponse.ok) {
-            const errorData =
-              (await presignedUrlResponse.json()) as ErrorResponse;
-            throw new Error(errorData.error ?? "Failed to get upload URL");
+            console.error("Presigned URL error details:", {
+              status: presignedUrlResponse.status,
+              statusText: presignedUrlResponse.statusText,
+              responseData: presignedData,
+            });
+            throw new Error(
+              presignedData.error ??
+                `Failed to get upload URL (${presignedUrlResponse.status})`,
+            );
           }
 
-          const { uploadUrl, fileKey } =
-            (await presignedUrlResponse.json()) as PresignedResponse;
+          const { uploadUrl, fileKey } = presignedData;
 
           // Step 2: Upload the file directly to S3
           setUploadProgress(10); // Starting the upload
 
-          const uploadResponse = await fetch(uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: {
-              "Content-Type": file.type,
-            },
-          });
+          console.log(
+            "Attempting to upload file directly to S3 with URL:",
+            uploadUrl,
+          );
 
-          if (!uploadResponse.ok) {
+          try {
+            const uploadResponse = await fetch(uploadUrl, {
+              method: "PUT",
+              body: file,
+              headers: {
+                "Content-Type": file.type,
+              },
+            });
+
+            if (!uploadResponse.ok) {
+              console.error(
+                "S3 Upload failed with status:",
+                uploadResponse.status,
+              );
+              const responseText = await uploadResponse.text();
+              console.error("S3 Upload error details:", responseText);
+              throw new Error(
+                `Failed to upload file to S3: ${uploadResponse.statusText} (${uploadResponse.status})`,
+              );
+            }
+
+            console.log("S3 direct upload successful");
+            setUploadProgress(70); // Upload to S3 complete
+
+            // Step 3: Complete the upload by recording in the database
+            const completeResponse = await fetch("/api/s3/complete", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                fileKey,
+                fileName: file.name,
+                contentType: file.type,
+                size: file.size,
+                folderId,
+              }),
+            });
+
+            if (!completeResponse.ok) {
+              const errorData =
+                (await completeResponse.json()) as ErrorResponse;
+              throw new Error(errorData.error ?? "Failed to complete upload");
+            }
+
+            // Update progress for each file
+            setUploadProgress(100);
+          } catch (s3Error) {
+            console.error("Error during S3 direct upload:", s3Error);
             throw new Error(
-              `Failed to upload file to S3: ${uploadResponse.statusText}`,
+              `S3 upload error: ${s3Error instanceof Error ? s3Error.message : String(s3Error)}`,
             );
           }
-
-          setUploadProgress(70); // Upload to S3 complete
-
-          // Step 3: Complete the upload by recording in the database
-          const completeResponse = await fetch("/api/s3/complete", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              fileKey,
-              fileName: file.name,
-              contentType: file.type,
-              size: file.size,
-              folderId,
-            }),
-          });
-
-          if (!completeResponse.ok) {
-            const errorData = (await completeResponse.json()) as ErrorResponse;
-            throw new Error(errorData.error ?? "Failed to complete upload");
-          }
-
-          // Update progress for each file
-          setUploadProgress(100);
         }
 
         // Handle successful upload

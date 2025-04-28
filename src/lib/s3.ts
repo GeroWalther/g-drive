@@ -14,6 +14,17 @@ const s3Client = new S3Client({
     accessKeyId: process.env.AWS_USER_ACCESS_KEY_ID ?? "",
     secretAccessKey: process.env.AWS_USER_SECRET_ACCESS_KEY ?? "",
   },
+  // Fixed Signature Version to ensure compatibility
+  // This is important for presigned URLs in different environments
+  forcePathStyle: true, // Helps with compatibility in some regions
+});
+
+// Log S3 client initialization details once
+console.log("S3 client initialized with:", {
+  region: process.env.AWS_S3_REGION,
+  hasAccessKeyId: !!process.env.AWS_USER_ACCESS_KEY_ID,
+  hasSecretKey: !!process.env.AWS_USER_SECRET_ACCESS_KEY,
+  bucketName: process.env.AWS_S3_BUCKET_NAME ? "Set" : "Not set",
 });
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME ?? "";
@@ -24,22 +35,40 @@ const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME ?? "";
 export async function generateUploadUrl(
   key: string,
   contentType: string,
-  expiresIn = 2592000,
+  expiresIn = 604800, // 7 days in seconds - maximum allowed by AWS Signature V4
 ) {
+  console.log("Generating upload URL with:", {
+    bucketName: BUCKET_NAME,
+    region: process.env.AWS_S3_REGION,
+    key,
+    contentType,
+    hasCredentials:
+      !!process.env.AWS_USER_ACCESS_KEY_ID &&
+      !!process.env.AWS_USER_SECRET_ACCESS_KEY,
+    expiresIn,
+  });
+
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
     ContentType: contentType,
   });
 
-  const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
-  return signedUrl;
+  try {
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    console.log("Generated signed URL successfully");
+    return signedUrl;
+  } catch (error) {
+    console.error("Error generating signed URL:", error);
+    throw error;
+  }
 }
 
 /**
  * Generates a presigned URL for downloading/viewing a file from S3
  */
-export async function generateDownloadUrl(key: string, expiresIn = 2592000) {
+export async function generateDownloadUrl(key: string, expiresIn = 604800) {
+  // 7 days in seconds
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,

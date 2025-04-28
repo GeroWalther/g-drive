@@ -1,7 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { generateUploadUrl } from "../../../../lib/s3";
 import { extractFolderIdFromPath } from "../../../../lib/utils";
+
+interface UploadRequestBody {
+  fileName: string;
+  contentType: string;
+  folderId?: string | null;
+}
 
 /**
  * Generates a presigned URL for client-side uploads to S3
@@ -15,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body = await request.json();
+    const body = (await request.json()) as UploadRequestBody;
     const { fileName, contentType, folderId: bodyFolderId } = body;
 
     if (!fileName || !contentType) {
@@ -56,7 +66,19 @@ export async function POST(request: NextRequest) {
     console.error(
       "Error generating presigned URL:",
       error instanceof Error ? error.message : String(error),
+      "\nStack trace:",
+      error instanceof Error ? error.stack : "No stack trace available",
     );
+
+    // Log environment info (without sensitive details)
+    console.error("Environment context:", {
+      region: process.env.AWS_S3_REGION,
+      hasBucketName: !!process.env.AWS_S3_BUCKET_NAME,
+      hasAccessKey: !!process.env.AWS_USER_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_USER_SECRET_ACCESS_KEY,
+      nodeEnv: process.env.NODE_ENV,
+    });
+
     return NextResponse.json(
       { error: "Failed to generate presigned URL" },
       { status: 500 },

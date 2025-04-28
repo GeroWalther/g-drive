@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 /**
  * URL refresh utility for handling expired S3 presigned URLs
  * This provides client-side handling for expired URLs
@@ -24,6 +25,12 @@ interface UrlCache {
 const urlCache: UrlCache = {};
 
 /**
+ * Check if code is running on the client or server
+ * This is important because URL refresh should only run on the client
+ */
+const isClient = typeof window !== "undefined";
+
+/**
  * Refreshes a file's URL when it has expired
  * @param fileId The ID of the file to refresh
  * @param forceRefresh Whether to force a refresh even if cached
@@ -33,6 +40,12 @@ export async function refreshFileUrl(
   fileId: string,
   forceRefresh = false,
 ): Promise<string | null> {
+  // Only run this on the client side
+  if (!isClient) {
+    console.warn("refreshFileUrl called on server side - skipping");
+    return null;
+  }
+
   try {
     // Check if we have a cached URL that's less than 12 hours old (to reduce API calls)
     const cachedUrl = urlCache[fileId];
